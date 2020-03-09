@@ -6,23 +6,25 @@ from io import StringIO
 import ttn
 import base64
 
-message = "nog niks"
 # ------BEGIN MQTT TTN PART------ #
 
 app_id = "co2_sensor_stenden"
 access_key = "ttn-account-v2.J5ws5KGhK9jVP5p56HfG1VyLka8PecrVTtIsam6MpWA"
-
+counter = 0
 def uplink_callback(msg, client):
-  print("Received uplink from ", msg.dev_id)
-  print(msg)
-  global message
-  data = base64.b64decode(msg.payload_raw).decode('ascii')
-  data = data.split(',')
-  humidity = data[1]
-  message = temperature = data[2]
-  print("deviceID: " + msg.dev_id)
-  print("humidity: " + humidity)
-  print("temperature: " + temperature)
+    global counter
+    print("Received uplink from ", msg.dev_id)
+    print(msg)
+    print(counter)
+    # print('humidity: ' + base64.b64decode(msg.payload_raw).decode('ascii').split(',')[1])
+    # print('temperature: ' + base64.b64decode(msg.payload_raw).decode('ascii').split(',')[2])
+    # base64.b64decode(msg.payload_raw).decode('ascii').split(',')[1]
+    # data = base64.b64decode(msg.payload_raw).decode('ascii')
+    # data = data.split(',')
+    # humidity = data[1]
+    # temperature = data[2]
+    counter = counter + 1
+    # addMeting(msg.dev_id, temperature, msg.metadata.time, humidity)
 
 handler = ttn.HandlerClient(app_id, access_key)
 
@@ -39,10 +41,40 @@ app = Flask(__name__)
 def landing():
     return "Server is running!"
 
-@app.route("/TTN")
-def hello():
-    global message
-    return message
+
+@app.route("/addMeting", methods=['POST'])
+def addMetingFromPostRequest():
+    measurement = request.get_json()
+    nodeID = measurement['nodeID']
+    temperature = measurement['temperature']
+    datetime = measurement['datetime']
+    humidity = measurement['humidity']
+
+    addMeting(nodeID, temperature, datetime, humidity)
+
+
+def addMeting(nodeID, temperature, datetime, humidity):
+    sql = """INSERT INTO measurement(nodeID, temperature, datetime, humidity) VALUES(%s, %s, %s, %s) RETURNING measurementID;"""
+
+    conn = None
+    metingID = None
+    try:
+        params = config();
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor()
+        cur.execute(sql, (nodeID, temperature, datetime, humidity))
+        metingID = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            conn.close()
+
+    print(metingID)
+    return jsonify({'result': "succes", 'metingID': metingID})
+
 
 if __name__ == '__main__':
     app.run(debug=True)
