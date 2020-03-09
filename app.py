@@ -4,7 +4,6 @@ from config import config
 import os
 from io import StringIO
 import ttn
-import base64
 
 # ------BEGIN MQTT TTN PART------ #
 
@@ -12,19 +11,13 @@ app_id = "co2_sensor_stenden"
 access_key = "ttn-account-v2.J5ws5KGhK9jVP5p56HfG1VyLka8PecrVTtIsam6MpWA"
 counter = 0
 def uplink_callback(msg, client):
-    global counter
-    print("Received uplink from ", msg.dev_id)
-    print(msg)
-    print(counter)
-    # print('humidity: ' + base64.b64decode(msg.payload_raw).decode('ascii').split(',')[1])
-    # print('temperature: ' + base64.b64decode(msg.payload_raw).decode('ascii').split(',')[2])
-    # base64.b64decode(msg.payload_raw).decode('ascii').split(',')[1]
-    # data = base64.b64decode(msg.payload_raw).decode('ascii')
-    # data = data.split(',')
-    # humidity = data[1]
-    # temperature = data[2]
-    counter = counter + 1
-    # addMeting(msg.dev_id, temperature, msg.metadata.time, humidity)
+	global counter
+	print("Received uplink from ", msg.dev_id)
+	print("Humidity: " + msg.payload_fields.humidity)
+	print("Temperature: " + msg.payload_fields.temperature)
+	print(counter)
+	counter = counter + 1
+	# addMeting(msg.dev_id, temperature, msg.metadata.time, humidity)
 
 handler = ttn.HandlerClient(app_id, access_key)
 
@@ -34,8 +27,8 @@ mqtt_client.set_uplink_callback(uplink_callback)
 mqtt_client.connect()
 
 # ------END MQTT TTN PART------ #
-app = Flask(__name__)
 
+app = Flask(__name__)
 
 @app.route("/")
 def landing():
@@ -77,4 +70,4 @@ def addMeting(nodeID, temperature, datetime, humidity):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
