@@ -9,15 +9,13 @@ import ttn
 
 app_id = "co2_sensor_stenden"
 access_key = "ttn-account-v2.J5ws5KGhK9jVP5p56HfG1VyLka8PecrVTtIsam6MpWA"
-counter = 0
+
+
 def uplink_callback(msg, client):
-	global counter
-	print("Received uplink from ", msg.dev_id)
-	print("Humidity: " + msg.payload_fields.humidity)
-	print("Temperature: " + msg.payload_fields.temperature)
-	print(counter)
-	counter = counter + 1
-	# addMeting(msg.dev_id, temperature, msg.metadata.time, humidity)
+    humidity =  msg.payload_fields.humidity
+    temperature = msg.payload_fields.temperature
+    datetime = msg.metadata.time
+    addMeting(msg.dev_id, temperature, humidity, datetime)
 
 handler = ttn.HandlerClient(app_id, access_key)
 
@@ -43,19 +41,92 @@ def addMetingFromPostRequest():
     datetime = measurement['datetime']
     humidity = measurement['humidity']
 
-    addMeting(nodeID, temperature, datetime, humidity)
+    addMeting(nodeID, temperature, humidity, datetime)
 
+@app.route("/getallsensors", methods=['GET'])
+def getallsensors():
 
-def addMeting(nodeID, temperature, datetime, humidity):
-    sql = """INSERT INTO measurement(nodeID, temperature, datetime, humidity) VALUES(%s, %s, %s, %s) RETURNING measurementID;"""
+    sql = """SELECT * FROM node;"""
+    conn = None
+    data = {}
+    nodes_as_dict = []
+
+    try:
+        params = config()
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor()
+        cur.execute(sql)
+        nodes = cur.fetchall()
+
+        for node in nodes:
+
+            nodeID = node[0]
+            description = node[1]
+
+            node_as_dict = {
+                'nodeID': nodeID,
+                'description': description
+            }
+            nodes_as_dict.append(node_as_dict)
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+
+    finally:
+        if conn is not None:
+            conn.close()
+            data.update({'nodes': nodes_as_dict})
+        return jsonify(data)
+
+@app.route("/getalldatafornode", methods=['GET'])
+def getallsensordata():
+    nodeID = request.args.get('node')
+    sql = """SELECT measurementID, temperature, humidity, datetime FROM measurement WHERE nodeID = %s;"""
+    conn = None
+    data = {}
+    measurements_as_dict = []
+
+    try:
+        params = config()
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor()
+        cur.execute(sql, nodeID)
+        measurements = cur.fetchall()
+
+        for measurement in measurements:
+
+            measurementID = measurement[0]
+            temperature = measurement[1]
+            humidity = measurement[2]
+            datetime = measurement[3]
+
+            measurement_as_dict = {
+                'measurementID': measurementID,
+                'temperature': temperature,
+                'humidity': humidity,
+                'datetime': datetime
+            }
+            measurements_as_dict.append(measurement_as_dict)
+
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+
+    finally:
+        if conn is not None:
+            conn.close()
+            data.update({'measurements': measurements_as_dict})
+        return jsonify(data)
+
+def addMeting(nodeID, temperature, humidity, datetime):
+    sql = """INSERT INTO measurement(nodeID, temperature, humidity, datetime) VALUES(%s, %s, %s, %s) RETURNING measurementID;"""
 
     conn = None
     metingID = None
     try:
-        params = config();
+        params = config()
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
-        cur.execute(sql, (nodeID, temperature, datetime, humidity))
+        cur.execute(sql, (nodeID, temperature, humidity, datetime))
         metingID = cur.fetchone()[0]
         conn.commit()
         cur.close()
