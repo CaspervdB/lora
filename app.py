@@ -1,8 +1,6 @@
-from flask import Flask, request, abort, send_file, jsonify, make_response
+from flask import Flask, request, jsonify
 import psycopg2
 from config import config
-import os
-from io import StringIO
 import ttn
 
 # ------BEGIN MQTT TTN PART------ #
@@ -12,14 +10,13 @@ access_key = "ttn-account-v2.J5ws5KGhK9jVP5p56HfG1VyLka8PecrVTtIsam6MpWA"
 
 
 def uplink_callback(msg, client):
-    humidity =  msg.payload_fields.humidity
+    humidity = msg.payload_fields.humidity
     temperature = msg.payload_fields.temperature
     datetime = msg.metadata.time
     addMeting(msg.dev_id, temperature, humidity, datetime)
 
+
 handler = ttn.HandlerClient(app_id, access_key)
-
-
 mqtt_client = handler.data()
 mqtt_client.set_uplink_callback(uplink_callback)
 mqtt_client.connect()
@@ -117,8 +114,10 @@ def getallsensordata():
             data.update({'measurements': measurements_as_dict})
         return jsonify(data)
 
+
 def addMeting(nodeID, temperature, humidity, datetime):
-    sql = """INSERT INTO measurement(nodeID, temperature, humidity, datetime) VALUES(%s, %s, %s, %s) RETURNING measurementID;"""
+    sql = """INSERT INTO measurement(nodeID, temperature, humidity, datetime) 
+    VALUES(%s, %s, %s, %s) RETURNING measurementID;"""
 
     conn = None
     metingID = None
@@ -135,9 +134,7 @@ def addMeting(nodeID, temperature, humidity, datetime):
     finally:
         if conn is not None:
             conn.close()
-
     print(metingID)
-    return jsonify({'result': "succes", 'metingID': metingID})
 
 
 if __name__ == '__main__':
