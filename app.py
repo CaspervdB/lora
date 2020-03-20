@@ -1,8 +1,6 @@
-from flask import Flask, request, abort, send_file, jsonify, make_response
+from flask import Flask, request, jsonify
 import psycopg2
 from config import config
-import os
-from io import StringIO
 import ttn
 
 # ------BEGIN MQTT TTN PART------ #
