@@ -12,14 +12,13 @@ access_key = "ttn-account-v2.J5ws5KGhK9jVP5p56HfG1VyLka8PecrVTtIsam6MpWA"
 
 
 def uplink_callback(msg, client):
-    humidity =  msg.payload_fields.humidity
+    humidity = msg.payload_fields.humidity
     temperature = msg.payload_fields.temperature
     datetime = msg.metadata.time
     addMeting(msg.dev_id, temperature, humidity, datetime)
 
+
 handler = ttn.HandlerClient(app_id, access_key)
-
-
 mqtt_client = handler.data()
 mqtt_client.set_uplink_callback(uplink_callback)
 mqtt_client.connect()
@@ -27,6 +26,7 @@ mqtt_client.connect()
 # ------END MQTT TTN PART------ #
 
 app = Flask(__name__)
+
 
 @app.route("/")
 def landing():
@@ -40,8 +40,8 @@ def addMetingFromPostRequest():
     temperature = measurement['temperature']
     datetime = measurement['datetime']
     humidity = measurement['humidity']
-
     addMeting(nodeID, temperature, humidity, datetime)
+
 
 @app.route("/getallsensors", methods=['GET'])
 def getallsensors():
@@ -77,6 +77,7 @@ def getallsensors():
             conn.close()
             data.update({'nodes': nodes_as_dict})
         return jsonify(data)
+
 
 @app.route("/getalldatafornode", methods=['GET'])
 def getallsensordata():
@@ -116,6 +117,7 @@ def getallsensordata():
             conn.close()
             data.update({'measurements': measurements_as_dict})
         return jsonify(data)
+
 
 def addMeting(nodeID, temperature, humidity, datetime):
     sql = """INSERT INTO measurement(nodeID, temperature, humidity, datetime) VALUES(%s, %s, %s, %s) RETURNING measurementID;"""
