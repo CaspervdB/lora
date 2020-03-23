@@ -13,13 +13,14 @@ def uplink_callback(msg, client):
     humidity = msg.payload_fields.humidity
     temperature = msg.payload_fields.temperature
     datetime = msg.metadata.time
-    addMeting(msg.dev_id, temperature, humidity, datetime)
-
+    add_measurement(msg.dev_id, temperature, humidity, datetime)
 
 handler = ttn.HandlerClient(app_id, access_key)
 mqtt_client = handler.data()
 mqtt_client.set_uplink_callback(uplink_callback)
 mqtt_client.connect()
+
+
 
 # ------END MQTT TTN PART------ #
 
@@ -31,19 +32,19 @@ def landing():
     return "Server is running!"
 
 
-@app.route("/addMeting", methods=['POST'])
-def addMetingFromPostRequest():
+@app.route("/addmeasurement", methods=['POST'])
+def get_measurement_from_post_request():
     measurement = request.get_json()
     nodeID = measurement['nodeID']
     temperature = measurement['temperature']
     datetime = measurement['datetime']
     humidity = measurement['humidity']
-    addMeting(nodeID, temperature, humidity, datetime)
+    add_measurement(nodeID, temperature, humidity, datetime)
+    return "added"
 
 
 @app.route("/getallsensors", methods=['GET'])
-def getallsensors():
-
+def get_all_sensors():
     sql = """SELECT * FROM node;"""
     conn = None
     data = {}
@@ -57,7 +58,6 @@ def getallsensors():
         nodes = cur.fetchall()
 
         for node in nodes:
-
             nodeID = node[0]
             description = node[1]
 
@@ -78,7 +78,7 @@ def getallsensors():
 
 
 @app.route("/getalldatafornode", methods=['GET'])
-def getallsensordata():
+def get_all_sensor_data():
     nodeID = request.args.get('node')
     sql = """SELECT measurementID, temperature, humidity, datetime FROM measurement WHERE nodeID = %s;"""
     conn = None
@@ -93,7 +93,6 @@ def getallsensordata():
         measurements = cur.fetchall()
 
         for measurement in measurements:
-
             measurementID = measurement[0]
             temperature = measurement[1]
             humidity = measurement[2]
@@ -117,7 +116,7 @@ def getallsensordata():
         return jsonify(data)
 
 
-def addMeting(nodeID, temperature, humidity, datetime):
+def add_measurement(nodeID, temperature, humidity, datetime):
     sql = """INSERT INTO measurement(nodeID, temperature, humidity, datetime) VALUES(%s, %s, %s, %s) RETURNING measurementID;"""
 
     conn = None
