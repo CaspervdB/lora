@@ -1,28 +1,6 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, Response
 import psycopg2
 from config import config
-import ttn
-
-# ------BEGIN MQTT TTN PART------ #
-
-app_id = "co2_sensor_stenden"
-access_key = "ttn-account-v2.J5ws5KGhK9jVP5p56HfG1VyLka8PecrVTtIsam6MpWA"
-
-
-def uplink_callback(msg, client):
-    humidity = msg.payload_fields.humidity
-    temperature = msg.payload_fields.temperature
-    datetime = msg.metadata.time
-    add_measurement(msg.dev_id, temperature, humidity, datetime)
-
-handler = ttn.HandlerClient(app_id, access_key)
-mqtt_client = handler.data()
-mqtt_client.set_uplink_callback(uplink_callback)
-mqtt_client.connect()
-
-
-
-# ------END MQTT TTN PART------ #
 
 app = Flask(__name__)
 
@@ -39,8 +17,7 @@ def get_measurement_from_post_request():
     temperature = measurement['temperature']
     datetime = measurement['datetime']
     humidity = measurement['humidity']
-    add_measurement(nodeID, temperature, humidity, datetime)
-    return "added"
+    return add_measurement(nodeID, temperature, humidity, datetime)
 
 
 @app.route("/getallsensors", methods=['GET'])
@@ -120,13 +97,13 @@ def add_measurement(nodeID, temperature, humidity, datetime):
     sql = """INSERT INTO measurement(nodeID, temperature, humidity, datetime) VALUES(%s, %s, %s, %s) RETURNING measurementID;"""
 
     conn = None
-    metingID = None
+    measurement_id = None
     try:
         params = config()
         conn = psycopg2.connect(**params)
         cur = conn.cursor()
         cur.execute(sql, (nodeID, temperature, humidity, datetime))
-        metingID = cur.fetchone()[0]
+        measurement_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
     except (Exception, psycopg2.DatabaseError) as error:
@@ -135,8 +112,9 @@ def add_measurement(nodeID, temperature, humidity, datetime):
         if conn is not None:
             conn.close()
 
-    print(metingID)
-    return jsonify({'result': "succes", 'metingID': metingID})
+    print(measurement_id)
+    return_data = {'measurement_id': measurement_id}
+    return Response(response=return_data, status=201, mimetype="application/json")
 
 
 if __name__ == '__main__':
