@@ -1,6 +1,7 @@
 from flask import Flask, request, Response, jsonify
 import psycopg2
 from config import config
+import json
 
 app = Flask(__name__)
 
@@ -17,12 +18,34 @@ def get_measurement_from_post_request():
     temperature = measurement['temperature']
     datetime = measurement['datetime']
     humidity = measurement['humidity']
-    return add_measurement(nodeID, temperature, humidity, datetime)
+    measurement_id = add_measurement(nodeID, temperature, humidity, datetime)
+    return Response(response={'measurement_id': measurement_id}, status=201, mimetype="application/json")
 
 
-@app.route("/getallsensors", methods=['GET'])
-def get_all_sensors():
-    sql = """SELECT * FROM node;"""
+@app.route("/getnodes", methods=['GET'])
+def get_nodes():
+    filter = request.args.get('filter')
+    if (filter == "moist"):
+        filt = "humidity desc;"
+    elif (filter == "dry"):
+        filt = "humidity asc;"
+    elif (filter == "warmest"):
+        filt = "temperature desc;"
+    elif (filter == "coolest"):
+        filt = "temperature asc;"
+    elif (filter == "none"):
+        filt = "measurement.measurementid asc;"
+    else:
+        return Response(response='filter is not set properly!', status=400)
+
+    sql = """select measurement.nodeid, description, temperature, humidity
+                from measurement
+                INNER JOIN sortnodesview
+                ON measurement.nodeid = sortnodesview.nodeid
+                AND measurement.measurementid = sortnodesview.sortnodesid
+                Inner Join node
+                on measurement.nodeid = node.nodeid
+                Order by """ + filt
     conn = None
     data = {}
     nodes_as_dict = []
@@ -35,15 +58,12 @@ def get_all_sensors():
         nodes = cur.fetchall()
 
         for node in nodes:
-            nodeID = node[0]
-            description = node[1]
-
-            node_as_dict = {
-                'nodeID': nodeID,
-                'description': description
-            }
-            nodes_as_dict.append(node_as_dict)
-
+            nodes_as_dict.append({
+                'nodeID': node[0],
+                'description': node[1],
+                'temperature': node[2],
+                'humidity': node[3]
+            })
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
 
@@ -51,7 +71,7 @@ def get_all_sensors():
         if conn is not None:
             conn.close()
             data.update({'nodes': nodes_as_dict})
-        return jsonify(data)
+        return Response(response=json.dumps(data), status=200, mimetype='application/json')
 
 
 @app.route("/getalldatafornode", methods=['GET'])
@@ -112,10 +132,8 @@ def add_measurement(nodeID, temperature, humidity, datetime):
         if conn is not None:
             conn.close()
 
-    print(measurement_id)
-    return_data = {'measurement_id': measurement_id}
-    return Response(response=return_data, status=201, mimetype="application/json")
+    return measurement_id
 
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
