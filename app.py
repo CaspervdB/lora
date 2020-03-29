@@ -33,7 +33,7 @@ def get_nodes():
         filt = "temperature desc;"
     elif (filter == "coolest"):
         filt = "temperature asc;"
-    elif (filter == "none"):
+    elif (filter == "none" or filter == None):
         filt = "measurement.measurementid asc;"
     else:
         return Response(response='filter is not set properly!', status=400)
