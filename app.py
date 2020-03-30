@@ -1,4 +1,4 @@
-from flask import Flask, request, Response, jsonify
+from flask import Flask, request, Response
 import psycopg2
 from config import config
 import json
@@ -71,7 +71,9 @@ def get_nodes():
         if conn is not None:
             conn.close()
             data.update({'nodes': nodes_as_dict})
-        return Response(response=json.dumps(data), status=200, mimetype='application/json')
+        response = Response(response=json.dumps(data), status=200, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
 
 
 @app.route("/getalldatafornode", methods=['GET'])
@@ -110,7 +112,9 @@ def get_all_sensor_data():
         if conn is not None:
             conn.close()
             data.update({'measurements': measurements_as_dict})
-        return jsonify(data)
+        response = Response(response=json.dumps(data), status=200, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
 
 
 def add_measurement(nodeID, temperature, humidity, datetime):
