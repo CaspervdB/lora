@@ -1,7 +1,15 @@
-from flask import Flask, request, Response
+from flask import Flask, request, Response, jsonify
 import psycopg2
 from config import config
 import json
+from datetime import date, datetime
+
+
+def json_serial(obj):
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    raise TypeError ("Type %s not serializable" % type(obj))
+
 
 app = Flask(__name__)
 
@@ -112,7 +120,7 @@ def get_all_sensor_data():
         if conn is not None:
             conn.close()
             data.update({'measurements': measurements_as_dict})
-        response = Response(response=json.dumps(data), status=200, mimetype='application/json')
+        response = Response(response=json.dumps(data, default=json_serial), status=200, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
 
