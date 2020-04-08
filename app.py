@@ -294,5 +294,40 @@ def add_measurement(nodeID, temperature, humidity, datetime):
     return measurement_id
 
 
+# KLAAR! voeg locatie toe.
+@app.route("/location", methods=['POST'])
+def add_location():
+    location = request.get_json()
+    nodeID = location['nodeID']
+    desc = location['description']
+    name = location['locationname']
+    capacity = location['capacity']
+
+    loc = add_location(nodeID, desc, name, capacity)
+    return Response(response={'locationInfo': loc}, status=201, mimetype="application/json")
+
+
+def add_location(locID, desc, name, capacity):
+    sql = """INSERT INTO node(nodeID, description, locationname, capacity) VALUES(%s, %s, %s, %s) RETURNING nodeID;"""
+
+    conn = None
+    nodeID = None
+    try:
+        params = config()
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor()
+        cur.execute(sql, (locID, desc, name, capacity))
+        nodeID = cur.fetchone()[0]
+        # conn.commit()
+        cur.close()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            conn.close()
+
+    return nodeID
+
+
 if __name__ == '__main__':
     app.run(debug=True)
