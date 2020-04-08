@@ -1,14 +1,33 @@
-from flask import Flask, request, Response, jsonify
-import psycopg2
-from config import config
 import json
 from datetime import date, datetime
+
+import jsonschema
+import psycopg2
+from flask import Flask, request, Response
+from jsonschema import validate
+
+from config import config
 
 
 def json_serial(obj):
     if isinstance(obj, (datetime, date)):
         return obj.isoformat()
     raise TypeError("Type %s not serializable" % type(obj))
+
+
+def validateJSON(schema, json_to_validate):
+    schema_path = "schema/" + schema + ".json"
+    with open(schema_path, 'r') as schema_file:
+        schema = json.loads(schema_file.read())
+
+    try:
+        validate(instance=json_to_validate, schema=schema)
+    except jsonschema.exceptions.ValidationError as err:
+        print(err)
+        print("Json valid: false")
+        return False
+    print("Json valid: true")
+    return True
 
 
 app = Flask(__name__)
@@ -265,6 +284,10 @@ def deleteMeasurement(measurementID):
 @app.route("/measurement", methods=['POST'])
 def get_measurement_from_post_request():
     measurement = request.get_json()
+
+    if not validateJSON("measurement", measurement):
+        return Response(response={'measurement_id': "Bad request"}, status=405, mimetype="application/json")
+
     nodeID = measurement['nodeID']
     temperature = measurement['temperature']
     datetime = measurement['datetime']
@@ -299,6 +322,9 @@ def add_measurement(nodeID, temperature, humidity, datetime):
 @app.route("/location", methods=['POST'])
 def add_location():
     location = request.get_json()
+    if not validateJSON("location", location):
+        return Response(response={'locationInfo': "Bad request"}, status=405, mimetype="application/json")
+
     nodeID = location['nodeID']
     desc = location['description']
     name = location['locationname']

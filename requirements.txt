@@ -1,3 +1,4 @@
+jsonschema
 Flask
 psycopg2
 uwsgi
