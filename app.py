@@ -122,15 +122,15 @@ def getLocationInfo(locationID):
 @app.route("/locations", methods=['GET'])
 def get_nodes():
     filter = request.args.get('filter')
-    if (filter == "moist"):
+    if filter == "moist":
         filt = "humidity desc;"
-    elif (filter == "dry"):
+    elif filter == "dry":
         filt = "humidity asc;"
-    elif (filter == "warmest"):
+    elif filter == "warmest":
         filt = "temperature desc;"
-    elif (filter == "coolest"):
+    elif filter == "coolest":
         filt = "temperature asc;"
-    elif (filter == "none" or filter == None):
+    elif filter == "none" or filter is None:
         filt = "measurement.measurementid asc;"
     else:
         return Response(response='filter is not set properly!', status=400)
