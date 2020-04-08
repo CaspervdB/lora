@@ -116,7 +116,7 @@ def get_nodes():
     else:
         return Response(response='filter is not set properly!', status=400)
 
-    sql = """select measurement.nodeid, description, temperature, humidity
+    sql = """select measurement.nodeid, locationname, description, temperature, humidity
                 from measurement
                 INNER JOIN sortnodesview
                 ON measurement.nodeid = sortnodesview.nodeid
@@ -138,9 +138,10 @@ def get_nodes():
         for node in nodes:
             nodes_as_dict.append({
                 'nodeID': node[0],
-                'description': node[1],
-                'temperature': node[2],
-                'humidity': node[3]
+                'location': node[1],
+                'description': node[2],
+                'temperature': node[3],
+                'humidity': node[4]
             })
     except (Exception, psycopg2.DatabaseError) as error:
         print(error)
