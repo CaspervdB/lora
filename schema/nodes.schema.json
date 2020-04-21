@@ -1,0 +1,43 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema",
+	"title": "Nodes validaiton schema. A node is a device measuring data and belongs to a location.",
+	"type": "object",
+	"required": ["nodes"],
+	"properties":{
+		"nodes": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": [
+					"nodeID",
+					"location",
+					"description",
+					"temperature",
+					"humidity"
+				],
+				"properties": {
+					"nodeID": {
+						"type": "integer",
+						"minimum": 0
+					},
+					"location": {
+						"type": "string",
+						"minLength": 0
+					},
+					"description": {
+						"type": "string",
+						"minLength": 0
+					},
+					"temperature": {
+						"type": "integer",
+						"minimum": 0
+					},
+					"humidity": {
+						"type": "integer",
+						"minimum": 0
+					}
+				}
+		  	}
+		}
+	}
+}
