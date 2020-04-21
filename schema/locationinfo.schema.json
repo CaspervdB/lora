@@ -1,0 +1,33 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema",
+	"title": "Location info validation schema. A location typically represents a room with a number and capacity.",
+	"type": "object",
+	"required": ["locationInfo"],
+	"properties":{
+		"nodes": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": [
+					"description",
+					"locationname",
+					"capacity"
+				],
+				"properties": {
+					"description": {
+						"type": "string",
+						"minLength": 0
+					},
+					"locationname": {
+						"type": "number",
+						"minimum": 0
+					},
+					"capacity": {
+						"type": "integer",
+						"minimum": 0
+					}
+				}
+		  	}
+		}
+	}
+}
