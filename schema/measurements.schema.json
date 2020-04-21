@@ -1,0 +1,38 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema",
+	"title": "Measurements validation schema. A measurement consists of temperature and humidity data measured by a node.",
+	"type": "object",
+	"required": ["measurements"],
+	"properties":{
+		"nodes": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": [
+					"measurementID",
+					"temperature",
+					"humidity",
+					"datetime"
+				],
+				"properties": {
+					"measurementID": {
+						"type": "integer",
+						"minimum": 0
+					},
+					"temperature": {
+						"type": "number",
+						"minLength": 0
+					},
+					"humidity": {
+						"type": "number",
+						"minLength": 0
+					},
+					"datetime": {
+						"type": "string",
+						"minLength": 0
+					}
+				}
+		  	}
+		}
+	}
+}

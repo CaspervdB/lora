@@ -1,6 +1,6 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema",
-	"title": "Nodes validaiton schema. A node is a device measuring data and belongs to a location.",
+	"title": "Nodes validation schema. A node is a device measuring data and belongs to a location.",
 	"type": "object",
 	"required": ["nodes"],
 	"properties":{

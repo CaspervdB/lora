@@ -32,13 +32,13 @@ def validateJSON(schema, json_to_validate):
 
 # Returns the path to the schema of the specified resource as a string
 def getSchemaPath(resource):
-	return 'schema/' + resource + '.json'
+	return 'schema/' + resource + '.schema.json'
 
 
 # Returns the Link header string
 def getLinkHeader(resource):
 	schemaPath = '/' + getSchemaPath(resource)
-	return '<' + schemaPath + '>; rel="describedby"; type="application/json"'
+	return '<' + schemaPath + '>; rel="describedby"; type="application/schema+json"'
 
 
 app = Flask(__name__)
@@ -49,7 +49,7 @@ def landing():
     return "Server is running!"
 
 
-# KLAAR! Alle informatie van de locatie inclusief de laatste bekende meting waardes
+# Return all measurements of a location
 @app.route("/locations/<locationID>", methods=['GET'])
 def getLocationData(locationID):
     sql = """SELECT measurementid, temperature, humidity, datetime FROM measurement WHERE nodeid = %s;"""
@@ -86,11 +86,12 @@ def getLocationData(locationID):
             conn.close()
             data.update({'measurements': measurements_as_dict})
         response = Response(response=json.dumps(data, default=json_serial), status=200, mimetype='application/json')
+        response.headers["Link"] = getLinkHeader('measurements')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
 
 
-# KLAAR! Returnt alle informatie van een locatie
+# Return location info
 @app.route("/locationInfo/<locationID>", methods=['GET'])
 def getLocationInfo(locationID):
     sql = """SELECT description, locationname, capacity FROM node WHERE nodeid = %s;"""
@@ -125,11 +126,12 @@ def getLocationInfo(locationID):
             conn.close()
             data.update({'locationInfo': list})
         response = Response(response=json.dumps(data, default=json_serial), status=200, mimetype='application/json')
+        response.headers['Link'] = getLinkHeader('locationinfo')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
 
 
-#  KLAAR! Alle locations gesorteerd op filter inclusief de laatst bekende meting waardes.
+# Alle locations gesorteerd op filter inclusief de laatst bekende meting waardes.
 @app.route("/locations", methods=['GET'])
 def get_nodes():
     filter = request.args.get('filter')
@@ -181,11 +183,12 @@ def get_nodes():
             conn.close()
             data.update({'nodes': nodes_as_dict})
         response = Response(response=json.dumps(data), status=200, mimetype='application/json')
+        response.headers['Link'] = getLinkHeader('nodes')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
 
 
-# KLAAR! Alle metingen returnen.
+# Alle metingen returnen.
 @app.route("/measurements", methods=['GET'])
 def getAllData():
     sql = """SELECT measurementID, temperature, humidity, datetime FROM measurement"""
@@ -222,52 +225,19 @@ def getAllData():
             conn.close()
             data.update({'measurements': measurements_as_dict})
         response = Response(response=json.dumps(data, default=json_serial), status=200, mimetype='application/json')
+        response.headers["Link"] = getLinkHeader('measurements')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
 
 
-# KLAAR! Alle metingen terug van de meegeven locatie.
+# Alle metingen terug van de meegeven locatie.
 @app.route("/measurements/<locationID>", methods=['GET'])
 def get_all_sensor_data(locationID):
-    sql = """SELECT measurementid, temperature, humidity, datetime FROM measurement WHERE nodeid = %s;"""
-    conn = None
-    data = {}
-    measurements_as_dict = []
-
-    try:
-        params = config()
-        conn = psycopg2.connect(**params)
-        cur = conn.cursor()
-        cur.execute(sql, locationID)
-        measurements = cur.fetchall()
-
-        for measurement in measurements:
-            measurementID = measurement[0]
-            temperature = measurement[1]
-            humidity = measurement[2]
-            datetime = measurement[3]
-
-            measurement_as_dict = {
-                'measurementID': measurementID,
-                'temperature': temperature,
-                'humidity': humidity,
-                'datetime': datetime
-            }
-            measurements_as_dict.append(measurement_as_dict)
-
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-
-    finally:
-        if conn is not None:
-            conn.close()
-            data.update({'measurements': measurements_as_dict})
-        response = Response(response=json.dumps(data, default=json_serial), status=200, mimetype='application/json')
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        return response
+    # Don't use duplicate code
+    return getLocationData(locationID)
 
 
-# KLAAR! Meting met meegegeven id wordt verwijderd.
+# Meting met meegegeven id wordt verwijderd.
 @app.route("/measurements/<measurementID>", methods=['DELETE'])
 def deleteMeasurement(measurementID):
     sql = """DELETE FROM measurement WHERE measurementid = %s;"""
@@ -287,11 +257,12 @@ def deleteMeasurement(measurementID):
         if conn is not None:
             conn.close()
         response = Response(status=204, mimetype='application/json')
+        response.headers["Link"] = getLinkHeader('measurements')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
 
 
-# KLAAR! voeg meting toe.
+# Voeg meting toe.
 @app.route("/measurement", methods=['POST'])
 def get_measurement_from_post_request():
     measurement = request.get_json()
@@ -329,7 +300,7 @@ def add_measurement(nodeID, temperature, humidity, datetime):
     return measurement_id
 
 
-# KLAAR! voeg locatie toe.
+# Voeg locatie toe.
 @app.route("/location", methods=['POST'])
 def add_location():
     location = request.get_json()
