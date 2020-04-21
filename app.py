@@ -16,7 +16,7 @@ def json_serial(obj):
 
 
 def validateJSON(schema, json_to_validate):
-    schema_path = "schema/" + schema + ".json"
+    schema_path = getSchemaPath(schema)
     with open(schema_path, 'r') as schema_file:
         schema = json.loads(schema_file.read())
 
@@ -28,6 +28,17 @@ def validateJSON(schema, json_to_validate):
         return False
     print("Json valid: true")
     return True
+
+
+# Returns the path to the schema of the specified resource as a string
+def getSchemaPath(resource):
+	return 'schema/' + resource + '.json'
+
+
+# Returns the Link header string
+def getLinkHeader(resource):
+	schemaPath = '/' + getSchemaPath(resource)
+	return '<' + schemaPath + '>; rel="describedby"; type="application/json"'
 
 
 app = Flask(__name__)
