@@ -268,7 +268,7 @@ def get_measurement_from_post_request():
     measurement = request.get_json()
 
     if not validateJSON("measurement", measurement):
-        return Response(response={'measurement_id': "Bad request"}, status=405, mimetype="application/json")
+        return Response(response={'measurement_id': "Bad request"}, status=400, mimetype="application/json")
 
     nodeID = measurement['nodeID']
     temperature = measurement['temperature']
@@ -305,7 +305,7 @@ def add_measurement(nodeID, temperature, humidity, datetime):
 def add_location():
     location = request.get_json()
     if not validateJSON("location", location):
-        return Response(response={'locationInfo': "Bad request"}, status=405, mimetype="application/json")
+        return Response(response={'locationInfo': "Bad request"}, status=400, mimetype="application/json")
 
     nodeID = location['nodeID']
     desc = location['description']
