@@ -267,7 +267,7 @@ def deleteMeasurement(measurementID):
 def get_measurement_from_post_request():
     measurement = request.get_json()
 
-    if not validateJSON("measurement", measurement):
+    if not validateJSON("measurementPost", measurement):
         return Response(response={'measurement_id': "Bad request"}, status=400, mimetype="application/json")
 
     nodeID = measurement['nodeID']
